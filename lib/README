@@ -1,46 +1,25 @@
 
-This directory is intended for project specific (private) libraries.
-PlatformIO will compile them to static libraries and link into the executable file.
+Biblioteki projektu MANIEK
+==========================
 
-The source code of each library should be placed in a separate directory
-("lib/your_library_name/[Code]").
+Każda biblioteka leży w osobnym podkatalogu z plikami .h i .cpp.
+PlatformIO kompiluje je automatycznie jako biblioteki statyczne.
 
-For example, see the structure of the following example libraries `Foo` and `Bar`:
+Hierarchia (każda warstwa rozszerza poprzednią):
 
-|--lib
-|  |
-|  |--Bar
-|  |  |--docs
-|  |  |--examples
-|  |  |--src
-|  |     |- Bar.c
-|  |     |- Bar.h
-|  |  |- library.json (optional. for custom build options, etc) https://docs.platformio.org/page/librarymanager/config.html
-|  |
-|  |--Foo
-|  |  |- Foo.c
-|  |  |- Foo.h
-|  |
-|  |- README --> THIS FILE
-|
-|- platformio.ini
-|--src
-   |- main.c
+  sterowanie   – jazda prosta + skręty (goFoward, goBack, goLeft, goRight, turnLeft, turnRight)
+      ↓
+  osemki       – pełny zestaw ruchu: wszystko z "sterowanie" + łuki (curveLeft, curveRight)
+      ↓
+  linia        – wszystko z "osemki" + czujniki linii (sensorRightLeftInit, sensorRight, sensorLeft)
 
-Example contents of `src/main.c` using Foo and Bar:
-```
-#include <Foo.h>
-#include <Bar.h>
+Wybór biblioteki do projektu:
+  - Proste sterowanie bez łuków  → sterowanie
+  - Pełny ruch z łukami          → osemki
+  - Śledzenie linii               → linia
 
-int main (void)
-{
-  ...
-}
+Wspólna inicjalizacja (każda biblioteka):
+  initRobot()  – konfiguruje kanały LEDC na pinach 2, 12, 13, 14 (5000Hz, 8-bit)
 
-```
-
-The PlatformIO Library Dependency Finder will find automatically dependent
-libraries by scanning project source files.
-
-More information about PlatformIO Library Dependency Finder
-- https://docs.platformio.org/page/librarymanager/ldf.html
+Przykłady użycia bibliotek znajdują się w src/examples/ (PlatformIO)
+oraz arduino/ (Arduino IDE).

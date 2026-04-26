@@ -21,9 +21,9 @@ Szczegóły bibliotek, pin-out i opisy przykładów: zobacz [`docs/examples.md`]
 |-------|------------|---------|
 | `osemkiv1` | `osemki` | Jazda ósemkami (sekwencja prosta) |
 | `osemkiv2` | `osemki` | Jazda ósemkami (z pętlą `for`) |
-| `sterowanie` | `osemki` | Prosta sekwencja jazdy z łukami |
-| `sterowanie2` | `sterowanie` | Najprostsza jazda do przodu |
-| `line_follower1` | `linia` | Line follower — trzy warunki `if` |
+| `sterowanie` | `osemki` | Sekwencja jazdy z łukami |
+| `sterowanie2` | `sterowanie` | Jazda do przodu |
+| `line_follower1` | `linia` | Line follower — warunki `if` |
 | `line_follower2` | `linia` | Line follower — wersja zagnieżdżona |
 
 ---
