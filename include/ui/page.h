@@ -201,6 +201,8 @@ static const char INDEX_HTML[] = R"rawliteral(<!doctype html>
         var result     = document.getElementById('result');
         var kind       = document.getElementById('kind');
         let Model;
+        let isPredicting = false;
+        let recognitionLoopTimer = null;
 
         async function LoadModel() {
           if (modelPath.value == "") { result.innerHTML = "Please input model path."; return; }
@@ -213,45 +215,61 @@ static const char INDEX_HTML[] = R"rawliteral(<!doctype html>
           maxPredictions = Model.getTotalClasses();
           result.innerHTML = "";
           getStill.style.display = "block";
-          getStill.click();
+          
+          // Force start MJPEG stream if not running
+          let streamBtn = document.getElementById('toggle-stream');
+          if (streamBtn && streamBtn.innerHTML === 'Start Stream') {
+             streamBtn.click();
+          }
+          
+          if (!recognitionLoopTimer) {
+             recognitionLoopTimer = setInterval(predict, 250);
+          }
         }
 
         async function predict() {
-          var data = "", maxClassName = "", maxProbability = "";
-          canvas.setAttribute("width",  ShowImage.width);
-          canvas.setAttribute("height", ShowImage.height);
-          context.drawImage(ShowImage, 0, 0, ShowImage.width, ShowImage.height);
+          if (isPredicting || !Model || !ShowImage.src || ShowImage.src.length < 10) return;
+          isPredicting = true;
 
-          var prediction;
-          if (kind.value == "image")
-            prediction = await Model.predict(canvas);
-          else if (kind.value == "pose") {
-            var { pose, posenetOutput } = await Model.estimatePose(canvas);
-            prediction = await Model.predict(posenetOutput);
-          }
+          try {
+            var w = ShowImage.naturalWidth || ShowImage.width || 320;
+            var h = ShowImage.naturalHeight || ShowImage.height || 240;
+            canvas.setAttribute("width",  w);
+            canvas.setAttribute("height", h);
+            context.drawImage(ShowImage, 0, 0, w, h);
 
-          if (maxPredictions > 0) {
-            for (let i = 0; i < maxPredictions; i++) {
-              if (i == 0 || prediction[i].probability > maxProbability) {
-                maxClassName    = prediction[i].className;
-                maxProbability  = prediction[i].probability;
-              }
-              data += prediction[i].className + "," + prediction[i].probability.toFixed(2) + "<br>";
+            var prediction;
+            if (kind.value == "image")
+              prediction = await Model.predict(canvas);
+            else if (kind.value == "pose") {
+              var { pose, posenetOutput } = await Model.estimatePose(canvas);
+              prediction = await Model.predict(posenetOutput);
             }
-            result.innerHTML  = data;
-            result.innerHTML += "<br>Result: " + maxClassName + "," + maxProbability;
-            $.ajax({url: document.location.origin+'/control?serial='+maxClassName+";"+maxProbability+';stop', async: false});
-          } else {
-            result.innerHTML = "Unrecognizable";
+
+            if (maxPredictions > 0) {
+              var data = "", maxClassName = "", maxProbability = "";
+              for (let i = 0; i < maxPredictions; i++) {
+                if (i == 0 || prediction[i].probability > maxProbability) {
+                  maxClassName    = prediction[i].className;
+                  maxProbability  = prediction[i].probability;
+                }
+                data += prediction[i].className + "," + prediction[i].probability.toFixed(2) + "<br>";
+              }
+              result.innerHTML  = data;
+              result.innerHTML += "<br>Result: " + maxClassName + "," + maxProbability;
+              await fetch(document.location.origin+'/control?serial='+maxClassName+";"+maxProbability+';stop').catch(e => console.error(e));
+            } else {
+              result.innerHTML = "Unrecognizable";
+            }
+          } catch(e) {
+            console.error(e);
           }
-          getStill.click();
+
+          isPredicting = false;
         }
 
         ShowImage.onload = function (event) {
-          if (Model) {
-            try { document.createEvent("TouchEvent"); setTimeout(function(){ predict(); }, 250); }
-            catch(e) { predict(); }
-          }
+          // Nie odpalamy na load, używamy niezależnego setInterval(predict, 250)
         }
         </script>
     </body>

@@ -228,6 +228,7 @@
     // Auto-fill IP if hosted on ESP32
     if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '') {
       document.getElementById('ip').value = window.location.hostname;
+      document.getElementById('mode').value = 'poll'; // Ustawiamy poll domyślnie, jest stabilniejszy i nie ma problemu CORS
     }
 
     // ---------- HTTPS warning ----------
@@ -272,19 +273,23 @@
         img.src = `http://${ip}:${port}/stream`;
         ml.textContent = `MJPEG stream :${port}`;
       } else {
-        // Polling mode — refresh /capture every 200ms
-        ml.textContent = 'Polling /capture (5 fps)';
+        // Polling mode — refresh sequentially to not crash ESP
+        ml.textContent = 'Polling /capture';
         const refresh = () => {
+          if (mode !== 'poll') return;
           const tmp = new Image();
           tmp.crossOrigin = "anonymous";
           tmp.onload = () => {
             img.src = tmp.src;
             frameCount++;
+            if (pollTimer) pollTimer = setTimeout(refresh, 200);
+          };
+          tmp.onerror = () => {
+            if (pollTimer) pollTimer = setTimeout(refresh, 1000);
           };
           tmp.src = `http://${ip}/capture?t=${Date.now()}`;
         };
-        refresh();
-        pollTimer = setInterval(refresh, 200);
+        pollTimer = setTimeout(refresh, 0);
       }
     }
 
@@ -303,7 +308,7 @@
     }
 
     function disconnectCamera() {
-      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+      if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
       if (fpsTimer) { clearInterval(fpsTimer); fpsTimer = null; }
       document.getElementById('stream').src = '';
       document.getElementById('connStatus').textContent = '';
@@ -365,23 +370,8 @@
         setStatus(`[${name}] ${classes[name].length} zdjęć`);
       } catch (e) {
         console.error('Canvas error:', e);
-        // If drawImage/toDataURL failed due to CORS, try fetching the image manually
-        if (mode === 'poll' || e.name === 'SecurityError') {
-           setStatus('Problem z CORS, próbuję pobrać ręcznie...', true);
-           try {
-             const ip = document.getElementById('ip').value.trim();
-             const response = await fetch(`http://${ip}/capture?t=${Date.now()}`);
-             const blob = await response.blob();
-             const reader = new FileReader();
-             reader.onloadend = () => {
-               classes[name].push(reader.result);
-               renderClasses();
-               setStatus(`[${name}] ${classes[name].length} zdjęć (pobrano ręcznie)`);
-             };
-             reader.readAsDataURL(blob);
-           } catch (fetchErr) {
-             setStatus('Błąd: canvas zablokowany (CORS). Spróbuj trybu polling lub sprawdź konsolę.', true);
-           }
+        if (mode === 'stream' && e.name === 'SecurityError') {
+           setStatus('Blokada CORS (przeglądarka zablokowała zdjęcie). Przełącz Tryb na "Polling /capture" u góry i kliknij Połącz!', true);
         } else {
            setStatus('Błąd przy robieniu zdjęcia: ' + e.message, true);
         }
