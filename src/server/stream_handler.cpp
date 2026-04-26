@@ -1,4 +1,5 @@
 #include "server/stream_handler.h"
+#include "camera/camera_init.h"
 #include "esp_camera.h"
 #include "img_converters.h"
 #include <Arduino.h>
@@ -22,9 +23,17 @@ static size_t jpg_encode_stream(void *arg, size_t index, const void *data, size_
 }
 
 esp_err_t capture_handler(httpd_req_t *req) {
-  camera_fb_t *fb = esp_camera_fb_get();
+  camera_fb_t *fb = NULL;
+  for (int i = 0; i < 4 && !fb; i++) {
+    fb = esp_camera_fb_get();
+    if (!fb) { delay(80); }
+  }
   if (!fb) {
-    Serial.println("Camera capture failed");
+    Serial.println("Camera capture failed — próba reinit");
+    reinitCamera();
+    fb = esp_camera_fb_get();
+  }
+  if (!fb) {
     httpd_resp_send_500(req);
     return ESP_FAIL;
   }
@@ -57,12 +66,21 @@ esp_err_t stream_handler(httpd_req_t *req) {
   if (res != ESP_OK) return res;
   httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
 
+  int fail_streak = 0;
   while (true) {
     fb = esp_camera_fb_get();
     if (!fb) {
       Serial.println("Camera capture failed");
-      res = ESP_FAIL;
+      if (++fail_streak >= 5) {
+        reinitCamera();
+        fail_streak = 0;
+        delay(100);
+        continue;
+      }
+      delay(50);
+      continue;
     } else {
+      fail_streak = 0;
       if (fb->format != PIXFORMAT_JPEG) {
         bool ok = frame2jpg(fb, 80, &jpg_buf, &jpg_len);
         esp_camera_fb_return(fb);
@@ -81,10 +99,11 @@ esp_err_t stream_handler(httpd_req_t *req) {
     }
     if (res == ESP_OK) res = httpd_resp_send_chunk(req, (const char *)jpg_buf, jpg_len);
 
-    if (fb)      { esp_camera_fb_return(fb); fb = NULL; jpg_buf = NULL; }
-    else if (jpg_buf) { free(jpg_buf); jpg_buf = NULL; }
+    if (fb)            { esp_camera_fb_return(fb); fb = NULL; jpg_buf = NULL; }
+    else if (jpg_buf)  { free(jpg_buf); jpg_buf = NULL; }
 
     if (res != ESP_OK) break;
+    jpg_buf = NULL;
   }
   return res;
 }

@@ -1,3 +1,4 @@
 #pragma once
 
-void initCamera();
+bool initCamera();
+bool reinitCamera();

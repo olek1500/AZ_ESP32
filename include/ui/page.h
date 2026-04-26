@@ -21,14 +21,14 @@ static const char INDEX_HTML[] = R"rawliteral(<!doctype html>
         <section class="main">
             <figure>
               <div id="stream-container" class="image-container hidden">
-                <div class="close" id="close-stream" style="display:none">×</div>
-                <img id="stream" src="" style="display:none" crossorigin="anonymous">
+                <div class="close" id="close-stream">×</div>
+                <img id="stream" src="" crossorigin="anonymous">
                 <canvas id="canvas" width="0" height="0"></canvas>
               </div>
             </figure>
             <section id="buttons">
                 <table>
-                <tr><td><button id="restart" onclick="try{fetch(document.location.origin+'/control?restart');}catch(e){}">Restart</button></td><td><button id="get-still" style="display:none">Get Still</button></td><td><button id="toggle-stream" style="display:none"></td></tr>
+                <tr><td><button id="restart" onclick="try{fetch(document.location.origin+'/control?restart');}catch(e){}">Restart</button></td><td><button id="get-still">Get Still</button></td><td><button id="toggle-stream">Start Stream</button></td></tr>
                 </table>
             </section>
             <div id="logo">

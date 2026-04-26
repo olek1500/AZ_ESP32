@@ -8,8 +8,7 @@
 static String Feedback = "";
 static String Command  = "";
 static String cmd = "";
-static String P1  = "", P2 = "", P3 = "", P4 = "", P5 = "";
-static String P6  = "", P7 = "", P8 = "", P9 = "";
+static String P1 = "", P2 = "";
 
 static byte ReceiveState   = 0;
 static byte cmdState       = 1;
@@ -30,13 +29,6 @@ void getCommand(char c) {
     if ((cmdState == 1) && ((c != '?') || (questionstate == 1)))              cmd = cmd + String(c);
     if ((cmdState == 0) && (strState == 1) && ((c != '=') || (equalstate == 1))) P1 = P1 + String(c);
     if ((cmdState == 0) && (strState == 2) && (c != ';')) P2 = P2 + String(c);
-    if ((cmdState == 0) && (strState == 3) && (c != ';')) P3 = P3 + String(c);
-    if ((cmdState == 0) && (strState == 4) && (c != ';')) P4 = P4 + String(c);
-    if ((cmdState == 0) && (strState == 5) && (c != ';')) P5 = P5 + String(c);
-    if ((cmdState == 0) && (strState == 6) && (c != ';')) P6 = P6 + String(c);
-    if ((cmdState == 0) && (strState == 7) && (c != ';')) P7 = P7 + String(c);
-    if ((cmdState == 0) && (strState == 8) && (c != ';')) P8 = P8 + String(c);
-    if ((cmdState == 0) && (strState >= 9) && ((c != ';') || (semicolonstate == 1))) P9 = P9 + String(c);
 
     if (c == '?') questionstate = 1;
     if (c == '=') equalstate = 1;
@@ -88,8 +80,7 @@ esp_err_t cmd_handler(httpd_req_t *req) {
   }
 
   Feedback = ""; Command = "";
-  cmd = ""; P1 = ""; P2 = ""; P3 = ""; P4 = ""; P5 = "";
-  P6  = ""; P7 = ""; P8 = ""; P9 = "";
+  cmd = ""; P1 = ""; P2 = "";
   ReceiveState = 0; cmdState = 1; strState = 1;
   questionstate = 0; equalstate = 0; semicolonstate = 0;
 
@@ -122,11 +113,18 @@ esp_err_t cmd_handler(httpd_req_t *req) {
     }
     else if (cmd == "mac")          { Feedback = "STA MAC: " + WiFi.macAddress(); }
     else if (cmd == "restart")      { ESP.restart(); }
-    else if (cmd == "digitalwrite") { ledcDetachPin(P1.toInt()); pinMode(P1.toInt(), OUTPUT); digitalWrite(P1.toInt(), P2.toInt()); }
+    else if (cmd == "digitalwrite") {
+      // Blokuj piny kamery: 0,5,18,19,21,22,23,25,26,27,32,34,35,36,39
+      static const int camPins[] = {0,5,18,19,21,22,23,25,26,27,32,34,35,36,39};
+      int pin = P1.toInt();
+      bool safe = true;
+      for (int cp : camPins) if (pin == cp) { safe = false; break; }
+      if (safe) { ledcDetachPin(pin); pinMode(pin, OUTPUT); digitalWrite(pin, P2.toInt()); }
+      else Feedback = "Pin " + P1 + " zarezerwowany przez kamere";
+    }
     else if (cmd == "digitalread")  { Feedback = String(digitalRead(P1.toInt())); }
     else if (cmd == "analogwrite") {
       if (P1 == "4") {
-        ledcSetup(LEDC_FLASH_CH, 5000, 8); ledcAttachPin(4, LEDC_FLASH_CH);
         ledcWrite(LEDC_FLASH_CH, P2.toInt());
       } else {
         ledcSetup(LEDC_AUX_CH, 5000, 8); ledcAttachPin(P1.toInt(), LEDC_AUX_CH);
