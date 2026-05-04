@@ -4,6 +4,10 @@
 
 #include "esp_camera.h"
 #include "esp_http_server.h"
+#include "esp_log.h"
+
+static const char* TAG = "camera_server";
+static uint32_t avg_frame_time = 0;
 
 void motor_forward(int speed);
 void motor_backward(int speed);
@@ -112,6 +116,7 @@ static esp_err_t stream_handler(httpd_req_t *req){
         int64_t frame_time = fr_end - last_frame;
         last_frame = fr_end;
         frame_time /= 1000;
+        avg_frame_time = (avg_frame_time == 0) ? frame_time : (avg_frame_time * 9 + frame_time) / 10;
         ESP_LOGI(TAG, "MJPG: %uB %ums (%.1ffps), AVG: %ums (%.1ffps)",
                  (uint32_t)(_jpg_buf_len),
                  (uint32_t)frame_time, 1000.0 / (uint32_t)frame_time,

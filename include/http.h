@@ -8,7 +8,7 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       body { font-family: Arial; text-align: center; margin:0px auto; padding-top: 10px;}
-      table { margin-left: auto; margin-right: auto; padding-top: 130px; } //padding-top obnizamy przyciski do sterowania
+      table { margin-left: auto; margin-right: auto; padding-top: 130px; } /* padding-top obnizamy przyciski do sterowania */
       td { padding: 8 px; }
       .button {
         background-color:black;
@@ -38,8 +38,8 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
         max-width: 80% ;
         height: auto ; 
         padding-top: 10px;
-        transform: rotate(-180deg); //ROTACJA KAMERKI BARDZO WAZNE
-        //jak nie obraca to wtedy uruchomic przegladarke w trybie prywatnym i wtedy dziala
+        transform: rotate(-180deg); /* ROTACJA KAMERKI BARDZO WAZNE */
+        /* jak nie obraca to wtedy uruchomic przegladarke w trybie prywatnym i wtedy dziala */
       }
       .noselect {
       -webkit-touch-callout: none; /* iOS Safari */
