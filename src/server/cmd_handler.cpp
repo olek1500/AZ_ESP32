@@ -1,9 +1,35 @@
 #include "server/cmd_handler.h"
 #include "ledc_channels.h"
+#include "config.h"
 #include "esp_camera.h"
 #include <WiFi.h>
 #include <esp32-hal-ledc.h>
 #include <Arduino.h>
+
+// Layout H-bridge (zob. include/motor.h):
+//   LEWY silnik:  pin 2  = MOT1 (przód),  pin 14 = MOT2 (tył)
+//   PRAWY silnik: pin 12 = MOT3 (przód),  pin 13 = MOT4 (tył)
+static void driveStop() {
+  ledcWrite(LEDC_MOT1_CH, 0); ledcWrite(LEDC_MOT2_CH, 0);
+  ledcWrite(LEDC_MOT3_CH, 0); ledcWrite(LEDC_MOT4_CH, 0);
+}
+static void driveForward(int s) {
+  ledcWrite(LEDC_MOT2_CH, 0); ledcWrite(LEDC_MOT4_CH, 0);
+  ledcWrite(LEDC_MOT1_CH, s); ledcWrite(LEDC_MOT3_CH, s);
+}
+static void driveBackward(int s) {
+  ledcWrite(LEDC_MOT1_CH, 0); ledcWrite(LEDC_MOT3_CH, 0);
+  ledcWrite(LEDC_MOT2_CH, s); ledcWrite(LEDC_MOT4_CH, s);
+}
+// Obrót wokół osi: koła kręcą się przeciwnie
+static void driveRotateLeft(int s) {
+  ledcWrite(LEDC_MOT1_CH, 0); ledcWrite(LEDC_MOT3_CH, s);
+  ledcWrite(LEDC_MOT2_CH, s); ledcWrite(LEDC_MOT4_CH, 0);
+}
+static void driveRotateRight(int s) {
+  ledcWrite(LEDC_MOT1_CH, s); ledcWrite(LEDC_MOT3_CH, 0);
+  ledcWrite(LEDC_MOT2_CH, 0); ledcWrite(LEDC_MOT4_CH, s);
+}
 
 static String Feedback = "";
 static String Command  = "";
@@ -106,7 +132,13 @@ esp_err_t cmd_handler(httpd_req_t *req) {
       ledcWrite(LEDC_MOT3_CH, 650); ledcWrite(LEDC_MOT4_CH, 0);
     }
 
-    if      (cmd == "your cmd") {}
+    int driveSpeed = (P1.length() > 0) ? P1.toInt() : MOTOR_SPEED_DEFAULT;
+    if      (cmd == "fwd")    { driveForward(driveSpeed);  Feedback = "fwd " + String(driveSpeed); }
+    else if (cmd == "bwd")    { driveBackward(driveSpeed); Feedback = "bwd " + String(driveSpeed); }
+    else if (cmd == "left")   { driveRotateLeft(driveSpeed);  Feedback = "left " + String(driveSpeed); }
+    else if (cmd == "right")  { driveRotateRight(driveSpeed); Feedback = "right " + String(driveSpeed); }
+    else if (cmd == "stop")   { driveStop(); Feedback = "stop"; }
+    else if (cmd == "your cmd") {}
     else if (cmd == "ip") {
       Feedback  = "AP IP: "  + WiFi.softAPIP().toString();
       Feedback += "<br>STA IP: " + WiFi.localIP().toString();
