@@ -32,7 +32,7 @@ void startCameraServer();
 void motor_begin(void);
 
 void setup() {
-  //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
 
   motor_begin();
 
@@ -67,8 +67,8 @@ void setup() {
     config.jpeg_quality = 10;
     config.fb_count = 1;
   } else {
-    Serial.printf("FRAMESIZE_SVGA");
-    config.frame_size = FRAMESIZE_SVGA;
+    Serial.printf("FRAMESIZE_QVGA (Brak PSRAM)");
+    config.frame_size = FRAMESIZE_QVGA;
     config.jpeg_quality = 12;
     config.fb_count = 1;
   }

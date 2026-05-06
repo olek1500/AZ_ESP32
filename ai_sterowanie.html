@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Mózg Robota AI</title>
+    <!-- Ładujemy silnik sztucznej inteligencji Google -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #222; color: white; margin-top: 30px;}
+        img { max-width: 400px; border: 4px solid #4CAF50; border-radius: 10px; margin-top: 20px; transform: rotate(-180deg);}
+        #label-container { font-size: 28px; margin-top: 20px; font-weight: bold; color: #4CAF50; }
+        button { padding: 15px 30px; font-size: 20px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px;}
+    </style>
+</head>
+<body>
+    <h1>Sterowanie Robotem przez AI</h1>
+    <button type="button" onclick="init()">Uruchom Analizę AI</button>
+    <br>
+    
+    <!-- Obraz z kamery Twojego robota na żywo -->
+    <img id="robot-camera" src="http://192.168.4.1:81/stream" crossorigin="anonymous" />
+    
+    <!-- Tutaj będzie pisać, co AI aktualnie widzi -->
+    <div id="label-container">Czekam na uruchomienie...</div>
+
+    <script type="text/javascript">
+        // ========================================================
+        // 1. TUTAJ WKLEJ SKOPIOWANY LINK ZE SWOJEGO MODELU:
+        const URL = "https://teachablemachine.withgoogle.com/models/6FYloDCYd/";
+        // ========================================================
+
+        let model, labelContainer, maxPredictions;
+        let robotCamera = document.getElementById("robot-camera");
+        let isSending = false;
+
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            document.getElementById("label-container").innerHTML = "Ładowanie sztucznej inteligencji...";
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+            labelContainer = document.getElementById("label-container");
+            
+            // Analizujemy klatkę co 300 milisekund (żeby nie "zablokować" robota zbyt dużą ilością zapytań)
+            setInterval(predict, 300); 
+        }
+
+        // Funkcja do pociągania za wirtualne "sznurki" w robocie
+        function sendCommand(action) {
+            if (isSending) return; // Zapobiega spamowaniu robota komendami
+            isSending = true;
+            fetch("http://192.168.4.1/action?go=" + action)
+                .then(() => isSending = false)
+                .catch(() => isSending = false);
+        }
+
+        async function predict() {
+            if (!model) return;
+            
+            // AI patrzy na obraz z kamery robota
+            const prediction = await model.predict(robotCamera);
+            
+            // Znajdź najbardziej pewny wynik
+            let bestResult = prediction.reduce((prev, current) => (prev.probability > current.probability) ? prev : current);
+            labelContainer.innerHTML = "Rozpoznano: " + bestResult.className + " (" + (bestResult.probability * 100).toFixed(0) + "%)";
+
+            // ========================================================
+            // 2. TUTAJ ZMIENIASZ LOGIKĘ (Musisz wpisać DOKŁADNIE takie nazwy klas jak w Teachable Machine)
+            if (bestResult.className === "like" && bestResult.probability > 0.8) {
+                sendCommand("forward"); // jedź do przodu
+            } else {
+                sendCommand("stop"); // w każdym innym przypadku stój
+            }
+            // ========================================================
+        }
+    </script>
+</body>
+</html>
