@@ -34,12 +34,28 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
       transform: translate(5px,5px);
       box-shadow: none; 
       }
-      img {  width: auto ;
-        max-width: 80% ;
-        height: auto ; 
-        padding-top: 10px;
-        transform: rotate(-180deg); /* ROTACJA KAMERKI BARDZO WAZNE */
-        /* jak nie obraca to wtedy uruchomic przegladarke w trybie prywatnym i wtedy dziala */
+      .img-wrapper {
+        position: relative;
+        display: inline-block;
+        max-width: 80%;
+        margin-top: 10px;
+      }
+      .img-wrapper img {
+        width: 100%;
+        height: auto;
+        transform: rotate(-180deg);
+        display: block;
+      }
+      #crosshair {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border: 3px solid #00FF00; /* Kolor celownika - Zielony neonowy */
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        display: none;
+        box-shadow: 0 0 5px rgba(0,0,0,0.8);
       }
       .noselect {
       -webkit-touch-callout: none; /* iOS Safari */
@@ -87,11 +103,17 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
   </head>
   <body>
     <h1>ESP32-CAM Robot</h1>
-    <img src="" id="photo" >
+    <h3 id="status-panel" style="color:#4CAF50; margin: 5px 0;">Status: Wyłączony</h3>
+    <div class="img-wrapper">
+      <img src="" id="photo" >
+      <div id="crosshair"></div>
+    </div>
     <table>
       <tr><td colspan="3" align="center"><button class="button" onmousedown="toggleCheckbox('forward');" ontouchstart="toggleCheckbox('forward');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Forward</button></td></tr>
       <tr><td align="center"><button class="button" onmousedown="toggleCheckbox('left');" ontouchstart="toggleCheckbox('left');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Left</button></td><td align="center"><button class="button" onmousedown="toggleCheckbox('stop');" ontouchstart="toggleCheckbox('stop');">Stop</button></td><td align="center"><button class="button" onmousedown="toggleCheckbox('right');" ontouchstart="toggleCheckbox('right');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Right</button></td></tr>
       <tr><td colspan="3" align="center"><button class="button" onmousedown="toggleCheckbox('backward');" ontouchstart="toggleCheckbox('backward');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Backward</button></td></tr>                   
+      <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('detection');" style="background-color: #4CAF50;">Tryb Detekcji</button></td></tr>                   
+      <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('center');" style="background-color: #2196F3;">Wyśrodkuj</button></td></tr>                   
 
     </table>
     
@@ -108,6 +130,43 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
      xhr.send();
    }
    window.onload = document.getElementById("photo").src = window.location.href.slice(0, -1) + ":81/stream";
+
+   // Pętla pobierająca w tle status od ESP32 co 500 ms
+   setInterval(function() {
+     var xhr = new XMLHttpRequest();
+     xhr.onreadystatechange = function() {
+       if (this.readyState == 4 && this.status == 200) {
+         document.getElementById("status-panel").innerHTML = "Status: " + this.responseText;
+       }
+     };
+     xhr.open("GET", "/status", true);
+     xhr.send();
+   }, 500);
+
+   // Pętla odświeżająca na żywo pozycję celownika co 200 ms
+   setInterval(function() {
+     var xhr = new XMLHttpRequest();
+     xhr.onreadystatechange = function() {
+       if (this.readyState == 4 && this.status == 200) {
+         var coords = this.responseText.split(",");
+         if(coords.length == 2) {
+           var x = parseInt(coords[0]);
+           var y = parseInt(coords[1]);
+           var ch = document.getElementById("crosshair");
+           if (x >= 0 && y >= 0) {
+             ch.style.display = "block";
+             // Odbicie lustrzane 180° w obliczeniach, by zgrać się z rotacją kamerki
+             ch.style.left = (100 - (x / 320 * 100)) + "%";
+             ch.style.top = (100 - (y / 240 * 100)) + "%";
+           } else {
+             ch.style.display = "none";
+           }
+         }
+       }
+     };
+     xhr.open("GET", "/target", true);
+     xhr.send();
+   }, 200);
   </script>
   </body>
 </html>"
