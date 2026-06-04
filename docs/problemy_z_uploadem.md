@@ -31,3 +31,5 @@ Aby zainstalować nowy core w **Arduino IDE**, wykonaj następujące kroki:
 ## Weryfikacja
 
 Po zainstalowaniu nowego core'a wystarczy podłączyć ESP32, wybrać właściwy port COM i kliknąć **Wgraj** — płytka powinna **sama wejść w tryb bootloadera** bez konieczności trzymania przycisku RESET.
+ ## Ważna uwaga
+ Wszystkie podzespoły tp. silnik, buzzer i dalekościomierze powinny być odłączone podczas uploadu. 

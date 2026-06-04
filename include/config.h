@@ -1,7 +1,7 @@
-#ifndef SET_VALUE_H
-#define SET_VALUE_H
+#ifndef CONFIG_H
+#define CONFIG_H
 
-int motor_speed = 150;
-int flash_light = 0;
+#define MOTOR_SPEED_DEFAULT 750
+#define MOTOR_SPEED_SLOW    650
 
-#endif /*SET_VALUE_H */
+#endif /* CONFIG_H */
