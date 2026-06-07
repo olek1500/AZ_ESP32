@@ -113,13 +113,13 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
       <tr><td align="center"><button class="button" onmousedown="toggleCheckbox('left');" ontouchstart="toggleCheckbox('left');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Left</button></td><td align="center"><button class="button" onmousedown="toggleCheckbox('stop');" ontouchstart="toggleCheckbox('stop');">Stop</button></td><td align="center"><button class="button" onmousedown="toggleCheckbox('right');" ontouchstart="toggleCheckbox('right');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Right</button></td></tr>
       <tr><td colspan="3" align="center"><button class="button" onmousedown="toggleCheckbox('backward');" ontouchstart="toggleCheckbox('backward');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Backward</button></td></tr>                   
       <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('detection');" style="background-color: #4CAF50;">Tryb Detekcji</button></td></tr>                   
-      <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('center');" style="background-color: #2196F3;">Wyśrodkuj</button></td></tr>                   
+      <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('center');" style="background-color: #2196F3;">Wysrodkuj</button></td></tr>                   
 
     </table>
     
     <br><br>
     <div class="slidecontainer" style="max-width: 300px; margin: auto;">
-      <h3 style="color: #333;">Obrot kamery (Serwo)</h3>
+      <h3 style="color: #333;">Obrot serwo</h3>
       <input type="range" min="0" max="180" value="90" class="slider" id="servoSlider" oninput="sendButtonInput('servo', this.value)">
     </div>
     
