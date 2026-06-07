@@ -3,6 +3,7 @@ Parametry jak rotacja kamerki czy rozmieszczenie przyciskow
 sa w pliku:     http.h
 *********/
 
+#include "../serwo.h"
 #include "esp_camera.h"
 #include <WiFi.h>
 #include "esp_timer.h"
@@ -33,6 +34,9 @@ void motor_begin(void);
 
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+
+  // Inicjalizacja serwomechanizmu na pinie 15
+  initServo(15);
 
   motor_begin();
 

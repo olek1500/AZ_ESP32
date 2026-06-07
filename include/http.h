@@ -95,6 +95,12 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
 
     </table>
     
+    <br><br>
+    <div class="slidecontainer" style="max-width: 300px; margin: auto;">
+      <h3 style="color: #333;">Obrot kamery (Serwo)</h3>
+      <input type="range" min="0" max="180" value="90" class="slider" id="servoSlider" oninput="sendButtonInput('servo', this.value)">
+    </div>
+    
    <script>
    function toggleCheckbox(x) {
      var xhr = new XMLHttpRequest();
