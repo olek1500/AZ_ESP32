@@ -27,6 +27,12 @@ static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %
 httpd_handle_t camera_httpd = NULL;
 httpd_handle_t stream_httpd = NULL;
 
+extern bool detection_mode_enabled;
+extern char detection_status[128];
+extern int target_x;
+extern int target_y;
+extern bool center_target_requested;
+
 static esp_err_t index_handler(httpd_req_t *req){
   httpd_resp_set_type(req, "text/html");
   return httpd_resp_send(req, (const char *)INDEX_HTML, strlen(INDEX_HTML));
@@ -61,7 +67,8 @@ static esp_err_t stream_handler(httpd_req_t *req){
         if (!fb)
         {
             ESP_LOGE(TAG, "Camera capture failed");
-            res = ESP_FAIL;
+            vTaskDelay(50 / portTICK_PERIOD_MS); // Poczekaj na zwolnienie ramki, zamiast przerywać strumień
+            continue;
         }
         else
         {
@@ -129,6 +136,20 @@ static esp_err_t stream_handler(httpd_req_t *req){
     return res;
 }
 
+static esp_err_t status_handler(httpd_req_t *req){
+  httpd_resp_set_type(req, "text/plain");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  return httpd_resp_send(req, detection_status, strlen(detection_status));
+}
+
+static esp_err_t target_handler(httpd_req_t *req){
+  char buf[32];
+  snprintf(buf, sizeof(buf), "%d,%d", target_x, target_y);
+  httpd_resp_set_type(req, "text/plain");
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  return httpd_resp_send(req, buf, strlen(buf));
+}
+
 static esp_err_t cmd_handler(httpd_req_t *req){
   char*  buf;
   size_t buf_len;
@@ -179,23 +200,36 @@ static esp_err_t cmd_handler(httpd_req_t *req){
   
   if(!strcmp(variable, "forward")) {
     //Serial.println("Forward");
+    detection_mode_enabled = false;
     motor_forward(motor_speed);
   }
   else if(!strcmp(variable, "left")) {
     //Serial.println("Left");
+    detection_mode_enabled = false;
     motor_left(motor_speed);
   }
   else if(!strcmp(variable, "right")) {
     //Serial.println("Right");
+    detection_mode_enabled = false;
     motor_right(motor_speed);
   }
   else if(!strcmp(variable, "backward")) {
     //Serial.println("Backward");
+    detection_mode_enabled = false;
     motor_backward(motor_speed);
   }
   else if(!strcmp(variable, "stop")) {
     //Serial.println("Stop");
+    detection_mode_enabled = false;
     motor_stop();
+  }
+  else if(!strcmp(variable, "detection")) {
+    //Serial.println("Detection Mode");
+    detection_mode_enabled = true;
+  }
+  else if(!strcmp(variable, "center")) {
+    //Serial.println("Center Target");
+    center_target_requested = true;
   }
   else {
     res = 0; // Zmienione na 0, zeby przesuniecie suwaka nie powodowalo bledu na stronie
@@ -231,9 +265,23 @@ void startCameraServer(){
     .handler   = stream_handler,
     .user_ctx  = NULL
   };
+  httpd_uri_t status_uri = {
+    .uri       = "/status",
+    .method    = HTTP_GET,
+    .handler   = status_handler,
+    .user_ctx  = NULL
+  };
+  httpd_uri_t target_uri = {
+    .uri       = "/target",
+    .method    = HTTP_GET,
+    .handler   = target_handler,
+    .user_ctx  = NULL
+  };
   if (httpd_start(&camera_httpd, &config) == ESP_OK) {
     httpd_register_uri_handler(camera_httpd, &index_uri);
     httpd_register_uri_handler(camera_httpd, &cmd_uri);
+    httpd_register_uri_handler(camera_httpd, &status_uri);
+    httpd_register_uri_handler(camera_httpd, &target_uri);
   }
   config.server_port += 1;
   config.ctrl_port += 1;

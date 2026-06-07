@@ -8,15 +8,15 @@ void setup() {
 void loop() {
   int licznik;
   for (licznik = 0; licznik < 4; licznik++) {
-    goFoward(300, 255);
+    goFoward(200, 255);
     delay(50);
-    curveLeft(900, 20);
+    curveLeft(670, 100);
     delay(50);
   }
   for (licznik = 0; licznik < 4; licznik++) {
-    goFoward(300, 255);
+    goFoward(200, 255);
     delay(50);
-    curveRight(900, 20);
+    curveRight(670, 100);
     delay(50);
   }
 }
