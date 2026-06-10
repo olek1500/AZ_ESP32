@@ -1,4 +1,4 @@
-# MANIEK — sterowanie robotem ESP32
+# TRAKTOR — sterowanie robotem ESP32
 
 Projekt PlatformIO (ESP32, framework Arduino). Robot napędzany przez 4 kanały PWM (`ledc*`) na pinach 2, 12, 13, 14. Opcjonalne czujniki linii na pinach 15, 16.
 
