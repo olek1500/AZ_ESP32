@@ -37,6 +37,7 @@ char detection_status[128] = "Wyłączony";
 int target_x = -1;
 int target_y = -1;
 bool center_target_requested = false;
+bool approach_target_requested = false;
 extern void motor_right(int speed);
 extern void motor_stop(void);
 extern void motor_forward(int speed);
@@ -233,12 +234,28 @@ void loop() {
       int16_t center_x = fb->width / 2; // Środek ekranu (dla QVGA to 160)
       int16_t offset = avg_x - center_x;
       
-      if (center_target_requested) {
+      if (center_target_requested || approach_target_requested) {
         // Wyznaczamy minimalne ruchy centrujące
         if (abs(offset) < 25) {
-          Serial.println("Cel wyśrodkowany!");
-          snprintf(detection_status, sizeof(detection_status), "Cel wyśrodkowany!");
-          center_target_requested = false; // Koniec centrowania
+          if (approach_target_requested) {
+            // Sprawdzamy "odległość" na podstawie rozmiaru czerwonego obiektu (ilości pikseli)
+            // Im jesteśmy bliżej, tym red_count będzie większe. Ustawiony próg 8000 dla QVGA (ok 10% matrycy)
+            if (red_count < 8000) {
+              snprintf(detection_status, sizeof(detection_status), "Podjezdzanie...");
+              motor_forward(130);
+              delay(40); // Minimalny krok w przód
+              motor_stop();
+              delay(150); // Czas na ustabilizowanie obrazu
+            } else {
+              Serial.println("Cel osiagniety (blisko)!");
+              snprintf(detection_status, sizeof(detection_status), "Cel osiagniety!");
+              approach_target_requested = false; // Koniec podjeżdżania
+            }
+          } else {
+            Serial.println("Cel wyśrodkowany!");
+            snprintf(detection_status, sizeof(detection_status), "Cel wyśrodkowany!");
+            center_target_requested = false; // Koniec centrowania
+          }
         } 
         else if (offset > 0) {
           snprintf(detection_status, sizeof(detection_status), "Centrowanie w lewo...");
@@ -265,6 +282,7 @@ void loop() {
       target_x = -1;
       target_y = -1;
       center_target_requested = false; // Reset w przypadku zgubienia celu
+      approach_target_requested = false; // Zatrzymanie podjeżdżania, bo cel uciekł
       Serial.println("Brak czerwonego obiektu w tej klatce... Skanuję otoczenie.");
       snprintf(detection_status, sizeof(detection_status), "Szukam celu...");
       
@@ -291,6 +309,7 @@ void loop() {
     target_x = -1;
     target_y = -1;
     center_target_requested = false;
+    approach_target_requested = false;
     snprintf(detection_status, sizeof(detection_status), "Wyłączony");
     delay(50); // Tryb czuwania, gdy detekcja jest wyłączona
   }

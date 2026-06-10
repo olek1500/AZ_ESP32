@@ -32,6 +32,7 @@ extern char detection_status[128];
 extern int target_x;
 extern int target_y;
 extern bool center_target_requested;
+extern bool approach_target_requested;
 
 static esp_err_t index_handler(httpd_req_t *req){
   httpd_resp_set_type(req, "text/html");
@@ -177,6 +178,7 @@ static esp_err_t cmd_handler(httpd_req_t *req){
       else if(httpd_query_key_value(buf, "servo", variable, sizeof(variable)) == ESP_OK)
       {
         int angle = atoi(variable);
+        Serial.printf("TEST SERWA - Odebrano kat z przegladarki: %d\n", angle);
         setServoAngle(angle);
       }
       else {
@@ -230,6 +232,10 @@ static esp_err_t cmd_handler(httpd_req_t *req){
   else if(!strcmp(variable, "center")) {
     //Serial.println("Center Target");
     center_target_requested = true;
+  }
+  else if(!strcmp(variable, "approach")) {
+    //Serial.println("Approach Target");
+    approach_target_requested = true;
   }
   else {
     res = 0; // Zmienione na 0, zeby przesuniecie suwaka nie powodowalo bledu na stronie

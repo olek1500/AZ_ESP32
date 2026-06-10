@@ -113,7 +113,7 @@ static const char PROGMEM INDEX_HTML[] =R"rawliteral(
       <tr><td align="center"><button class="button" onmousedown="toggleCheckbox('left');" ontouchstart="toggleCheckbox('left');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Left</button></td><td align="center"><button class="button" onmousedown="toggleCheckbox('stop');" ontouchstart="toggleCheckbox('stop');">Stop</button></td><td align="center"><button class="button" onmousedown="toggleCheckbox('right');" ontouchstart="toggleCheckbox('right');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Right</button></td></tr>
       <tr><td colspan="3" align="center"><button class="button" onmousedown="toggleCheckbox('backward');" ontouchstart="toggleCheckbox('backward');" onmouseup="toggleCheckbox('stop');" ontouchend="toggleCheckbox('stop');">Backward</button></td></tr>                   
       <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('detection');" style="background-color: #4CAF50;">Tryb Detekcji</button></td></tr>                   
-      <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('center');" style="background-color: #2196F3;">Wysrodkuj</button></td></tr>                   
+      <tr><td colspan="3" align="center"><button class="button" onclick="toggleCheckbox('center');" style="background-color: #2196F3;">Wysrodkuj</button><button class="button" onclick="toggleCheckbox('approach');" style="background-color: #FF9800; margin-left: 10px;">Podjedz</button></td></tr>                   
 
     </table>
     
