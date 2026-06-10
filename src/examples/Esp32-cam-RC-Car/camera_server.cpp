@@ -2,6 +2,7 @@
 #include "motor.h"
 #include "http.h"
 
+#include "../serwo.h"
 #include "esp_camera.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
@@ -173,6 +174,11 @@ static esp_err_t cmd_handler(httpd_req_t *req){
         flash_light = atoi(variable);
         //analogWrite(4, flash_light);
       }
+      else if(httpd_query_key_value(buf, "servo", variable, sizeof(variable)) == ESP_OK)
+      {
+        int angle = atoi(variable);
+        setServoAngle(angle);
+      }
       else {
         free(buf);
         httpd_resp_send_404(req);
@@ -226,7 +232,7 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     center_target_requested = true;
   }
   else {
-    res = -1;
+    res = 0; // Zmienione na 0, zeby przesuniecie suwaka nie powodowalo bledu na stronie
   }
 
   if(res){

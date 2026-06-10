@@ -3,6 +3,7 @@ Parametry jak rotacja kamerki czy rozmieszczenie przyciskow
 sa w pliku:     http.h
 *********/
 
+#include "../serwo.h"
 #include "esp_camera.h"
 #include <WiFi.h>
 #include "esp_timer.h"
@@ -43,6 +44,9 @@ extern void motor_left(int speed);
 
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
+
+  // Inicjalizacja serwomechanizmu na pinie 15
+  initServo(15);
 
   motor_begin();
 
@@ -94,6 +98,7 @@ void setup() {
   s->set_whitebal(s, 1);
   s->set_awb_gain(s, 1);
   s->set_wb_mode(s, 0);
+  s->set_saturation(s, 2);     // Sprzętowe podbicie nasycenia (+2). Czerwień będzie się mocniej odcinać od brązowej podłogi.
 
 #if defined VFLIP_MIRROR
   s->set_hmirror(s, 1);        // 0 = disable , 1 = enable
@@ -181,7 +186,8 @@ void loop() {
     uint8_t best_r = 0, best_g = 0, best_b = 0;
 
 // 5. Analiza pikseli obrazu RGB565
-    for (int y = 0; y < fb->height; y++) {
+// POPRAWKA: Omijamy dolne 10 pikseli (y < fb->height - 10), aby pozbyć się fałszywych odczytów z uszkodzonego, pomarańczowego paska matrycy
+    for (int y = 0; y < fb->height - 10; y++) {
       for (int x = 0; x < fb->width; x++) {
         // Poprawka KRYTYCZNA: Zły szyk bajtów w pamięci (Endianness)!
         // ESP32 to układ Little-Endian. Poprzednie ręczne składanie bajtów 
@@ -200,9 +206,13 @@ void loop() {
           best_r = r; best_g = g; best_b = b;
         }
 
-        // Odświeżony, elastyczny warunek - po naprawie dekodowania pikseli
-        // R > 90 (odrzuca ciemne brązy), czerwień silniejsza od G i B o min. 30
-        if (r > 90 && r > g + 30 && r > b + 30) {
+        // ULEPSZONY WARUNEK 2.0 (maksymalnie odporny na drewno i wady kamery):
+        // 1. r > 50: Lekko podniesiony próg z 40, aby zignorować "szumy" całkowicie ciemnych obszarów.
+        // 2. r > g * 2: Żądamy, by czerwieni było ponad DWA RAZY więcej niż zieleni! 
+        //    Drewno to odcień pomarańczowego/brązowego (ma bardzo dużo zieleni np. R=120, G=70). 
+        //    Dla drewna warunek (120 > 140) zwróci FAŁSZ, i drewno zostanie pominięte. Prawdziwy cel (np. R=160, G=40) przejdzie gładko!
+        // 3. r * 10 > b * 15: Czerwień o min. 50% silniejsza od niebieskiego (zostawiamy drobną tolerancję na zimne światło jarzeniówek).
+        if (r > 50 && (r > g * 2) && (r * 10 > b * 15)) {
           red_x_total += x;
           red_y_total += y;
           red_count++;
@@ -259,8 +269,8 @@ void loop() {
       snprintf(detection_status, sizeof(detection_status), "Szukam celu...");
       
       // --- Logika skanowania przeniesiona z góry pętli ---
-      motor_right(180); // Obrót szukający
-      for(int i = 0; i < 15; i++) {
+      motor_right(130); // Zmniejszona prędkość szukania z 180 na 130 dla płynniejszego ruchu
+      for(int i = 0; i < 10; i++) { // Skrócony czas impulsu (100ms zamiast 150ms) = mniejsze "kroki"
         if (!detection_mode_enabled) { motor_stop(); return; }
         delay(10);
       }
