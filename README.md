@@ -1,4 +1,4 @@
-# MANIEK
+# TRAKTOR
 
 Sterowanie robotem ESP32 (4 silniki PWM, opcjonalnie czujniki linii). Repo wspiera **PlatformIO** i **Arduino IDE** równolegle.
 
